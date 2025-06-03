@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/Gamesta/', // Replace 'Gamesta' with your actual GitHub repository name
+  base: process.env.NODE_ENV === 'production' ? '/Gamesta/' : '/', // Use base path only in production
   build: {
     outDir: 'dist',
     sourcemap: false,

@@ -6,9 +6,12 @@ import Profile from './components/Profile'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 function App() {
+  // Use basename only in production (GitHub Pages)
+  const basename = process.env.NODE_ENV === 'production' ? '/Gamesta' : ''
+  
   return (
     <AuthProvider>
-      <Router>
+      <Router basename={basename}>
         <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
           <Routes>
             <Route path="/" element={<Landing />} />
