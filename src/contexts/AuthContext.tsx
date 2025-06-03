@@ -40,12 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         username: email.split('@')[0],
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
       }
-      
-      setUser(mockUser)
+        setUser(mockUser)
       localStorage.setItem('gamesta_user', JSON.stringify(mockUser))
       return true
     } catch (error) {
-      console.error('Login failed:', error)
+      // Silent error handling for mock authentication
       return false
     }
   }
@@ -58,12 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         username,
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
       }
-      
-      setUser(mockUser)
+        setUser(mockUser)
       localStorage.setItem('gamesta_user', JSON.stringify(mockUser))
       return true
     } catch (error) {
-      console.error('Registration failed:', error)
+      // Silent error handling for mock authentication
       return false
     }
   }
@@ -76,13 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = async (updates: Partial<User>): Promise<boolean> => {
     try {
       if (!user) return false
-      
-      const updatedUser = { ...user, ...updates }
+        const updatedUser = { ...user, ...updates }
       setUser(updatedUser)
       localStorage.setItem('gamesta_user', JSON.stringify(updatedUser))
       return true
     } catch (error) {
-      console.error('Profile update failed:', error)
+      // Silent error handling for mock authentication
       return false
     }
   }

@@ -1,14 +1,14 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
+import Dashboard from './components/Dashboard'
 import Landing from './components/Landing'
 import Login from './components/Login'
-import Dashboard from './components/Dashboard'
 import Profile from './components/Profile'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 function App() {
   // Use basename only in production (GitHub Pages)
   const basename = process.env.NODE_ENV === 'production' ? '/Gamesta' : ''
-  
+
   return (
     <AuthProvider>
       <Router basename={basename}>
@@ -27,7 +27,7 @@ function App() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -35,7 +35,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       </div>
     )
   }
-  
+
   return user ? children : <Navigate to="/login" />
 }
 
