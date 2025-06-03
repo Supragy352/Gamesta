@@ -1,0 +1,28 @@
+{
+    "recommendations": [
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "ms-vscode.vscode-json",
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        "ms-vscode.vscode-eslint",
+        "gruntfuggly.todo-tree",
+        "ms-vscode.live-server",
+        "ritwickdey.LiveServer",
+        "ms-playwright.playwright",
+        "github.copilot",
+        "github.copilot-chat",
+        "github.vscode-github-actions",
+        "ms-vscode-remote.remote-repositories",
+        "ms-vscode.remote-repositories",
+        "ms-edgedevtools.vscode-edge-devtools",
+        "mhutchie.git-graph",
+        "eamodio.gitlens",
+        "usernamehw.errorlens",
+        "bradlc.vscode-tailwindcss",
+        "steoates.autoimport-es6-ts",
+        "ms-vscode.vscode-npm-script"
+    ],
+    "unwantedRecommendations": []
+}

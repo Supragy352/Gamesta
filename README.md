@@ -93,6 +93,29 @@ Gamesta/
 - `npm run lint` - Run ESLint for code quality
 - `npm run deploy` - Manual deployment to GitHub Pages
 
+## ⚡ **VS Code Shortcuts & Tasks**
+
+This project includes **supercharged VS Code shortcuts** for lightning-fast development!
+
+🎮 **Quick Access:**
+- Press `Ctrl+Shift+P` → type `task dev` → Enter (Start development)
+- Press `F5` for instant dev server launch
+- Press `Ctrl+Shift+B` to build for production
+- Press `Ctrl+Shift+U` to deploy to GitHub Pages
+
+📖 **Complete Guides:**
+- [SHORTCUTS_READY.md](./SHORTCUTS_READY.md) - **Ready-to-use shortcuts reference**
+- [QUICK_START.md](./QUICK_START.md) - Quick development workflow
+- [VSCODE_SHORTCUTS.md](./VSCODE_SHORTCUTS.md) - Detailed shortcuts guide
+
+🎯 **Available VS Code Tasks:**
+- 🎮 Start Development Server
+- 🔨 Build for Production
+- 🚀 Deploy to GitHub Pages
+- 🔍 Lint Code
+- 🧹 Clean Install
+- 👀 Preview Production Build
+
 ## 🚀 Deployment
 
 This project is configured for automatic deployment to GitHub Pages using GitHub Actions.
