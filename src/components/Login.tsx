@@ -57,20 +57,20 @@ export default function Login() {
         <Gamepad2 className="absolute bottom-40 right-40 h-7 w-7 text-purple-400/20 float delay-700 animate-pulse" />
       </div>
 
-      <div className="max-w-md w-full relative z-10 slide-in">
-        {/* Header */}
+      <div className="max-w-md w-full relative z-10 slide-in">        {/* Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-2 mb-6 group">
             <Gamepad2 className="h-8 w-8 text-purple-400 group-hover:text-purple-300 transition-all duration-300 group-hover:rotate-12" />
             <span className="text-2xl font-bold text-white gaming-font group-hover:glow-purple transition-all duration-300">Gamesta</span>
           </Link>
+          <div className="text-sm text-purple-300 mb-2 font-medium">MIT Academy of Engineering</div>
           <h1 className="text-3xl font-bold text-white mb-2 gaming-font glow-purple">
-            {isLogin ? 'Welcome Back, Gamer!' : 'Join the Gaming Elite'}
+            {isLogin ? 'Welcome Back, Gamer!' : 'Join MIT AOE Gaming'}
           </h1>
           <p className="text-gray-300">
             {isLogin 
-              ? 'Ready to dive back into the gaming community?' 
-              : 'Create your account and become part of the gaming revolution'
+              ? 'Ready to dive back into the Alandi campus gaming community?' 
+              : 'Create your account and represent MIT AOE in the gaming revolution'
             }
           </p>
         </div>

@@ -36,24 +36,23 @@ export default function Landing() {
       {/* Hero Section */}
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-20">
         <div className="text-center">
-          <div className="slide-in-up">
-            <div className="inline-flex items-center space-x-2 bg-purple-900/30 backdrop-blur-sm rounded-full px-6 py-3 mb-8 border border-purple-500/30">
+          <div className="slide-in-up">            <div className="inline-flex items-center space-x-2 bg-purple-900/30 backdrop-blur-sm rounded-full px-6 py-3 mb-8 border border-purple-500/30">
               <Star className="h-5 w-5 text-yellow-400" />
-              <span className="text-purple-300 font-medium">Ultimate Gaming Experience</span>
+              <span className="text-purple-300 font-medium">MIT Academy of Engineering presents</span>
               <Star className="h-5 w-5 text-yellow-400" />
             </div>
           </div>
 
           <h1 className="text-7xl font-bold text-white mb-6 slide-in-up gaming-font" style={{animationDelay: '0.2s'}}>
-            College Gaming Fest
+            GAMESTA 2025
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 pulse-glow">
-              Idea Hub
+              Gaming Fest
             </span>
           </h1>
           
           <p className="text-xl text-gray-300 mb-8 max-w-4xl mx-auto slide-in-up leading-relaxed" style={{animationDelay: '0.4s'}}>
-            🎮 Join the ultimate college gaming festival! Share your epic ideas, vote on legendary activities, 
-            and help shape the most <span className="text-purple-400 font-semibold">mind-blowing gaming event</span> of the year.
+            🎮 Join MIT AOE's most epic gaming festival! Share your tournament ideas, vote on legendary activities, 
+            and help shape the <span className="text-purple-400 font-semibold">ultimate gaming experience</span> for our Alandi campus community.
           </p>
           
           <div className="slide-in-up" style={{animationDelay: '0.6s'}}>

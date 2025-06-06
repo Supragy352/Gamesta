@@ -29,36 +29,35 @@ export default function Dashboard() {
 
   // Load mock data
   useEffect(() => {
-    const mockIdeas: Idea[] = [
-      {
+    const mockIdeas: Idea[] = [      {
         id: '1',
-        title: 'Retro Gaming Tournament',
-        description: 'A tournament featuring classic games like Pac-Man, Tetris, and Street Fighter II. Perfect for bringing nostalgia to the fest!',
-        author: 'GameMaster_Alex',
+        title: 'MIT AOE Inter-Department Gaming Championship',
+        description: 'A massive tournament between Computer, Mechanical, Electronics, Civil, and Chemical departments. Team battles with department pride at stake!',
+        author: 'CompSci_Champion',
         authorId: '2',
-        votes: 24,
+        votes: 34,
         userVote: null,
         category: 'tournament',
         createdAt: new Date('2024-01-15')
       },
       {
         id: '2',
-        title: 'Cosplay Contest',
-        description: 'Let participants dress up as their favorite gaming characters. We could have different categories and prizes!',
-        author: 'CosplayQueen',
+        title: 'Engineering Gaming Lab Setup',
+        description: 'Convert the main auditorium into a gaming arena with high-end PCs, projectors, and gaming peripherals for the fest weekend.',
+        author: 'TechSetup_Pro',
         authorId: '3',
-        votes: 18,
+        votes: 28,
         userVote: null,
         category: 'activity',
         createdAt: new Date('2024-01-14')
       },
       {
         id: '3',
-        title: 'Gaming Setup Exhibition',
-        description: 'Showcase the coolest gaming rigs and setups. People can vote for the most impressive builds.',
-        author: 'TechGuru99',
+        title: 'Faculty vs Students Gaming Battle',
+        description: 'Epic showdown where MIT AOE faculty members take on students in various games. Let\'s see who really dominates!',
+        author: 'StudentRevolt',
         authorId: '4',
-        votes: 15,
+        votes: 22,
         userVote: null,
         category: 'activity',
         createdAt: new Date('2024-01-13')
@@ -140,10 +139,12 @@ export default function Dashboard() {
       {/* Navigation */}
       <nav className="bg-black/20 backdrop-blur-lg border-b border-gray-700 relative z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <Link to="/" className="flex items-center space-x-2 group">
+          <div className="flex justify-between items-center">            <Link to="/" className="flex items-center space-x-2 group">
               <Gamepad2 className="h-8 w-8 text-purple-400 group-hover:text-purple-300 transition-all duration-300 group-hover:rotate-12" />
-              <span className="text-2xl font-bold text-white gaming-font group-hover:glow-purple transition-all duration-300">Gamesta</span>
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold text-white gaming-font group-hover:glow-purple transition-all duration-300">Gamesta</span>
+                <span className="text-xs text-purple-300 font-medium">MIT Academy of Engineering</span>
+              </div>
             </Link>
             
             <div className="flex items-center space-x-4">
