@@ -1,10 +1,13 @@
+import { Calendar, Crown, Edit3, Gamepad2, Lightbulb, Mail, Save, Star, Trophy, User, X, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Gamepad2, User, Mail, Edit3, Save, X, Trophy, Lightbulb, Calendar, Star, Zap, Crown } from 'lucide-react'
+import { useToast } from '../contexts/ToastContext'
+import { LoadingButton } from './LoadingComponents'
 
 export default function Profile() {
   const { user, updateProfile, logout } = useAuth()
+  const { showSuccess, showError } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState({
     username: user?.username || '',
@@ -12,13 +15,35 @@ export default function Profile() {
   })
   const [loading, setLoading] = useState(false)
 
+  const validateProfileData = (): string | null => {
+    if (!editData.username.trim()) return 'Username is required'
+    if (editData.username.length < 3) return 'Username must be at least 3 characters long'
+    if (!/^[a-zA-Z0-9_]+$/.test(editData.username)) return 'Username can only contain letters, numbers, and underscores'
+    if (editData.bio && editData.bio.length > 500) return 'Bio must be less than 500 characters'
+    return null
+  }
+
   const handleSave = async () => {
-    setLoading(true)
-    const success = await updateProfile(editData)
-    if (success) {
-      setIsEditing(false)
+    const validationError = validateProfileData()
+    if (validationError) {
+      showError('Validation Error', validationError)
+      return
     }
-    setLoading(false)
+
+    setLoading(true)
+    try {
+      const result = await updateProfile(editData)
+      if (result.success) {
+        setIsEditing(false)
+        showSuccess('Profile Updated!', 'Your gaming profile has been successfully updated')
+      } else {
+        showError('Update Failed', result.error || 'Failed to update profile')
+      }
+    } catch (error) {
+      showError('Error', 'An unexpected error occurred while updating your profile')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleCancel = () => {
@@ -60,15 +85,15 @@ export default function Profile() {
               <Gamepad2 className="h-8 w-8 text-purple-400 group-hover:text-purple-300 transition-all duration-300 group-hover:rotate-12" />
               <span className="text-2xl font-bold text-white gaming-font group-hover:glow-purple transition-all duration-300">Gamesta</span>
             </Link>
-            
+
             <div className="flex items-center space-x-4">
-              <Link 
-                to="/dashboard" 
+              <Link
+                to="/dashboard"
                 className="text-gray-300 hover:text-white transition-all duration-200 hover:glow-purple px-3 py-2 rounded-lg hover:bg-white/10"
               >
                 Dashboard
               </Link>
-              <button 
+              <button
                 onClick={logout}
                 className="text-gray-300 hover:text-white transition-all duration-200 hover:glow-pink px-3 py-2 rounded-lg hover:bg-white/10"
               >
@@ -96,7 +121,7 @@ export default function Profile() {
                   <Crown className="h-4 w-4 text-white" />
                 </div>
               </div>
-              
+
               <div className="flex-1">
                 {isEditing ? (
                   <div className="space-y-4">
@@ -137,17 +162,17 @@ export default function Profile() {
                 )}
               </div>
             </div>
-              <div className="flex space-x-2">
+            <div className="flex space-x-2">
               {isEditing ? (
-                <>
-                  <button
-                    onClick={handleSave}
-                    disabled={loading}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 disabled:opacity-50 transform hover:scale-105 gaming-font"
-                  >
-                    <Save className="h-4 w-4" />
-                    <span>Save Changes</span>
-                  </button>
+                <>                  <LoadingButton
+                  onClick={handleSave}
+                  isLoading={loading}
+                  loadingText="Saving..."
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 transform hover:scale-105 gaming-font"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>Save Changes</span>
+                </LoadingButton>
                   <button
                     onClick={handleCancel}
                     className="bg-gray-600/50 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 backdrop-blur-lg border border-white/20"
@@ -181,7 +206,7 @@ export default function Profile() {
               <Zap className="h-4 w-4 text-yellow-400 animate-pulse" />
             </div>
           </div>
-          
+
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 text-center border border-white/20 hover:border-pink-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-pink-500/20 slide-in delay-200">
             <div className="bg-gradient-to-r from-pink-600 to-pink-700 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-pink-500/50 glow-pink">
               <Trophy className="h-8 w-8 text-white" />
@@ -192,7 +217,7 @@ export default function Profile() {
               <Star className="h-4 w-4 text-yellow-400 animate-pulse" />
             </div>
           </div>
-          
+
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 text-center border border-white/20 hover:border-blue-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 slide-in delay-400">
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/50 glow-blue">
               <Calendar className="h-8 w-8 text-white" />
@@ -211,7 +236,7 @@ export default function Profile() {
             <Zap className="h-6 w-6 mr-2 text-purple-400" />
             Recent Gaming Activity
           </h2>
-          
+
           <div className="space-y-4">
             <div className="flex items-center space-x-4 p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
               <div className="bg-gradient-to-r from-green-600 to-green-700 w-12 h-12 rounded-full flex items-center justify-center shadow-lg shadow-green-500/50">
@@ -225,7 +250,7 @@ export default function Profile() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4 p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 w-12 h-12 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50">
                 <Trophy className="h-6 w-6 text-white" />
@@ -238,7 +263,7 @@ export default function Profile() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4 p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
               <div className="bg-gradient-to-r from-purple-600 to-purple-700 w-12 h-12 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/50">
                 <User className="h-6 w-6 text-white" />
@@ -259,11 +284,11 @@ export default function Profile() {
           <Crown className="h-12 w-12 text-yellow-400 mx-auto mb-4 animate-pulse" />
           <h3 className="text-2xl font-bold text-white mb-4 gaming-font glow-purple">Ready to Dominate More Challenges?</h3>
           <p className="text-gray-300 mb-6 leading-relaxed">
-            The ultimate gaming fest is taking shape thanks to legendary contributions from elite gamers like you! 
+            The ultimate gaming fest is taking shape thanks to legendary contributions from elite gamers like you!
             Join the battle and help shape the future of gaming events.
           </p>
-          <Link 
-            to="/dashboard" 
+          <Link
+            to="/dashboard"
             className="bg-gradient-to-r from-white to-gray-100 text-purple-900 px-8 py-3 rounded-lg font-bold hover:from-gray-100 hover:to-white transition-all duration-300 transform hover:scale-105 gaming-font shadow-lg hover:shadow-xl"
           >
             Return to Arena

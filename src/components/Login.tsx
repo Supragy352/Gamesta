@@ -1,7 +1,9 @@
+import { Eye, EyeOff, Gamepad2, Shield, Star, Zap } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Gamepad2, Eye, EyeOff, Zap, Shield, Star } from 'lucide-react'
+import { useToast } from '../contexts/ToastContext'
+import { LoadingButton } from './LoadingComponents'
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true)
@@ -13,28 +15,62 @@ export default function Login() {
   const [error, setError] = useState('')
 
   const { login, register } = useAuth()
+  const { showSuccess, showError } = useToast()
   const navigate = useNavigate()
+
+  const validateForm = (): string | null => {
+    if (!email.trim()) return 'Email is required'
+    if (!password.trim()) return 'Password is required'
+    if (!isLogin && !username.trim()) return 'Username is required'
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) return 'Please enter a valid email address'
+
+    return null
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
 
-    try {
-      let success = false
-      if (isLogin) {
-        success = await login(email, password)
-      } else {
-        success = await register(email, password, username)
-      }
+    // Client-side validation
+    const validationError = validateForm()
+    if (validationError) {
+      setError(validationError)
+      showError('Validation Error', validationError)
+      return
+    }
 
-      if (success) {
-        navigate('/dashboard')
+    setLoading(true)
+
+    try {
+      let result
+      if (isLogin) {
+        result = await login(email.trim(), password)
+        if (result.success) {
+          showSuccess('Welcome back!', 'Successfully logged into the gaming arena')
+          navigate('/dashboard')
+        } else {
+          const errorMsg = result.error || 'Login failed'
+          setError(errorMsg)
+          showError('Login Failed', errorMsg)
+        }
       } else {
-        setError(isLogin ? 'Invalid credentials' : 'Registration failed')
+        result = await register(email.trim(), password, username.trim())
+        if (result.success) {
+          showSuccess('Account Created!', 'Welcome to the MIT AOE Gaming Community')
+          navigate('/dashboard')
+        } else {
+          const errorMsg = result.error || 'Registration failed'
+          setError(errorMsg)
+          showError('Registration Failed', errorMsg)
+        }
       }
     } catch (err) {
-      setError('Something went wrong. Please try again.')
+      const errorMsg = 'Something went wrong. Please try again.'
+      setError(errorMsg)
+      showError('Error', errorMsg)
     } finally {
       setLoading(false)
     }
@@ -68,8 +104,8 @@ export default function Login() {
             {isLogin ? 'Welcome Back, Gamer!' : 'Join MIT AOE Gaming'}
           </h1>
           <p className="text-gray-300">
-            {isLogin 
-              ? 'Ready to dive back into the Alandi campus gaming community?' 
+            {isLogin
+              ? 'Ready to dive back into the Alandi campus gaming community?'
               : 'Create your account and represent MIT AOE in the gaming revolution'
             }
           </p>
@@ -78,21 +114,21 @@ export default function Login() {
         {/* Form */}
         <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-white/20 hover:border-purple-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20">
           <form onSubmit={handleSubmit} className="space-y-6">            {!isLogin && (
-              <div className="group">
-                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2 group-focus-within:text-purple-300 transition-colors">
-                  Username
-                </label>
-                <input
-                  id="username"
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/20 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 hover:bg-white/25 focus:shadow-lg focus:shadow-purple-500/20"
-                  placeholder="Choose your gaming alias"
-                />
-              </div>
-            )}
+            <div className="group">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2 group-focus-within:text-purple-300 transition-colors">
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-3 bg-white/20 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 hover:bg-white/25 focus:shadow-lg focus:shadow-purple-500/20"
+                placeholder="Choose your gaming alias"
+              />
+            </div>
+          )}
 
             <div className="group">
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2 group-focus-within:text-purple-300 transition-colors">
@@ -138,25 +174,17 @@ export default function Login() {
                   {error}
                 </p>
               </div>
-            )}
-
-            <button
+            )}            <LoadingButton
               type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50 pulse-glow gaming-font"
+              isLoading={loading}
+              loadingText={isLogin ? 'Logging in...' : 'Creating account...'}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-purple-500/50 pulse-glow gaming-font"
             >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  {isLogin ? 'Logging in...' : 'Creating account...'}
-                </span>
-              ) : (
-                <span className="flex items-center justify-center">
-                  <Gamepad2 className="h-5 w-5 mr-2" />
-                  {isLogin ? 'Enter the Arena' : 'Join the Elite'}
-                </span>
-              )}
-            </button>
+              <span className="flex items-center justify-center">
+                <Gamepad2 className="h-5 w-5 mr-2" />
+                {isLogin ? 'Enter the Arena' : 'Join the Elite'}
+              </span>
+            </LoadingButton>
           </form>
 
           <div className="mt-6 text-center">

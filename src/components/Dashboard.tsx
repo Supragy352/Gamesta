@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react'
+import { ChevronDown, ChevronUp, Filter, Gamepad2, LogOut, Plus, Search, Sparkles, Target, Trophy, User, Zap } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Gamepad2, Plus, ChevronUp, ChevronDown, User, LogOut, Filter, Search, Trophy, Zap, Target, Sparkles } from 'lucide-react'
+import { useToast } from '../contexts/ToastContext'
+import { useAutoSave, useDraftManager, useSearchHistory, useUserPreferences } from '../hooks/useAutoSave'
+import { FormValidation, validateContent, validateForm, VALIDATION_RULES } from '../utils/validation'
+import { LoadingButton, SkeletonCard } from './LoadingComponents'
 
 interface Idea {
   id: string
@@ -17,6 +21,7 @@ interface Idea {
 
 export default function Dashboard() {
   const { user, logout } = useAuth()
+  const { showSuccess, showError } = useToast()
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [showForm, setShowForm] = useState(false)
   const [newIdea, setNewIdea] = useState({
@@ -26,99 +31,305 @@ export default function Dashboard() {
   })
   const [filter, setFilter] = useState<'all' | 'tournament' | 'activity' | 'other'>('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
-  // Load mock data
-  useEffect(() => {
-    const mockIdeas: Idea[] = [      {
-        id: '1',
-        title: 'MIT AOE Inter-Department Gaming Championship',
-        description: 'A massive tournament between Computer, Mechanical, Electronics, Civil, and Chemical departments. Team battles with department pride at stake!',
-        author: 'CompSci_Champion',
-        authorId: '2',
-        votes: 34,
-        userVote: null,
-        category: 'tournament',
-        createdAt: new Date('2024-01-15')
-      },
-      {
-        id: '2',
-        title: 'Engineering Gaming Lab Setup',
-        description: 'Convert the main auditorium into a gaming arena with high-end PCs, projectors, and gaming peripherals for the fest weekend.',
-        author: 'TechSetup_Pro',
-        authorId: '3',
-        votes: 28,
-        userVote: null,
-        category: 'activity',
-        createdAt: new Date('2024-01-14')
-      },
-      {
-        id: '3',
-        title: 'Faculty vs Students Gaming Battle',
-        description: 'Epic showdown where MIT AOE faculty members take on students in various games. Let\'s see who really dominates!',
-        author: 'StudentRevolt',
-        authorId: '4',
-        votes: 22,
-        userVote: null,
-        category: 'activity',
-        createdAt: new Date('2024-01-13')
+  // Auto-save and persistence hooks
+  const ideasAutoSave = useAutoSave(ideas, 'ideas_cache', {
+    delay: 2000,
+    onSave: () => console.log('Ideas cached successfully')
+  })
+
+  const { saveDraft, getDrafts, deleteDraft } = useDraftManager()
+  const { savePreferences, getPreferences } = useUserPreferences()
+  const { addSearchTerm } = useSearchHistory()
+
+  // Auto-save form data as draft
+  useAutoSave(newIdea, 'idea_form_draft', {
+    delay: 1000,
+    enabled: newIdea.title.length > 0 || newIdea.description.length > 0,
+    onSave: (data) => {
+      if (data.title || data.description) {
+        saveDraft({
+          ...data,
+          timestamp: Date.now()
+        })
       }
-    ]
-    setIdeas(mockIdeas)
-  }, [])
+    }
+  })
 
-  const handleSubmitIdea = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newIdea.title.trim() || !newIdea.description.trim()) return
-
-    const idea: Idea = {
-      id: Date.now().toString(),
+  // Enhanced validation function with content sanitization
+  const validateIdeaFormEnhanced = useCallback((): FormValidation => {
+    const formData = {
       title: newIdea.title,
       description: newIdea.description,
-      author: user?.username || 'Anonymous',
-      authorId: user?.id || '0',
-      votes: 0,
-      userVote: null,
-      category: newIdea.category,
-      createdAt: new Date()
+      category: newIdea.category
     }
 
-    setIdeas([idea, ...ideas])
-    setNewIdea({ title: '', description: '', category: 'activity' })
-    setShowForm(false)
-  }
+    const validationRules = {
+      title: VALIDATION_RULES.IDEA_SUBMISSION.title,
+      description: VALIDATION_RULES.IDEA_SUBMISSION.description
+    }
 
-  const handleVote = (ideaId: string, voteType: 'up' | 'down') => {
-    setIdeas(ideas.map(idea => {
-      if (idea.id === ideaId) {
-        let newVotes = idea.votes
-        let newUserVote: 'up' | 'down' | null = voteType
+    // Use comprehensive validation
+    const validation = validateForm(formData, validationRules)
 
-        // Handle vote logic
-        if (idea.userVote === voteType) {
-          // Remove vote
-          newUserVote = null
-          newVotes = voteType === 'up' ? newVotes - 1 : newVotes + 1
-        } else if (idea.userVote) {
-          // Change vote
-          newVotes = voteType === 'up' ? newVotes + 2 : newVotes - 2
-        } else {
-          // New vote
-          newVotes = voteType === 'up' ? newVotes + 1 : newVotes - 1
+    // Additional content validation
+    if (validation.isValid) {
+      const titleValidation = validateContent(newIdea.title, {
+        minLength: 5,
+        maxLength: 100,
+        fieldName: 'Title'
+      })
+
+      const descriptionValidation = validateContent(newIdea.description, {
+        minLength: 10,
+        maxLength: 1000,
+        fieldName: 'Description'
+      })
+
+      if (!titleValidation.isValid) {
+        validation.isValid = false
+        validation.errors.title = titleValidation.error || 'Title validation failed'
+      }
+
+      if (!descriptionValidation.isValid) {
+        validation.isValid = false
+        validation.errors.description = descriptionValidation.error || 'Description validation failed'
+      }
+    }
+
+    return validation
+  }, [newIdea])
+
+  // Load persisted data on mount
+  useEffect(() => {
+    const loadPersistedData = async () => {
+      try {        // Load user preferences
+        const prefs = getPreferences()
+        if (prefs && typeof prefs === 'object' && 'defaultCategory' in prefs) {
+          const defaultCategory = (prefs as any).defaultCategory
+          if (defaultCategory && defaultCategory !== 'activity') {
+            setFilter(defaultCategory as typeof filter)
+          }
         }
 
-        return { ...idea, votes: newVotes, userVote: newUserVote }
+        // Restore cached ideas if available
+        const restoredIdeas = ideasAutoSave.restoreData()
+        if (restoredIdeas && Array.isArray(restoredIdeas) && restoredIdeas.length > 0) {
+          setIdeas(restoredIdeas)
+          setLoading(false)
+          showSuccess('Data Restored', 'Previously saved ideas have been restored')
+          return
+        }
+
+        // Load draft if available
+        const drafts = getDrafts()
+        if (drafts.length > 0) {
+          const latestDraft = drafts[0]
+          setNewIdea({
+            title: latestDraft.title || '',
+            description: latestDraft.description || '',
+            category: latestDraft.category || 'activity'
+          })
+        }
+      } catch (error) {
+        console.error('Failed to load persisted data:', error)
       }
-      return idea
-    }))
+    }
+
+    loadPersistedData()
+  }, []) // Empty dependency array is intentional here
+
+  // Load mock data with loading state
+  useEffect(() => {
+    const loadIdeas = async () => {
+      try {
+        setLoading(true)
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        const mockIdeas: Idea[] = [{
+          id: '1',
+          title: 'MIT AOE Inter-Department Gaming Championship',
+          description: 'A massive tournament between Computer, Mechanical, Electronics, Civil, and Chemical departments. Team battles with department pride at stake!',
+          author: 'CompSci_Champion',
+          authorId: '2',
+          votes: 34,
+          userVote: null,
+          category: 'tournament',
+          createdAt: new Date('2024-01-15')
+        },
+        {
+          id: '2',
+          title: 'Engineering Gaming Lab Setup',
+          description: 'Convert the main auditorium into a gaming arena with high-end PCs, projectors, and gaming peripherals for the fest weekend.',
+          author: 'TechSetup_Pro',
+          authorId: '3',
+          votes: 28,
+          userVote: null,
+          category: 'activity',
+          createdAt: new Date('2024-01-14')
+        },
+        {
+          id: '3',
+          title: 'Faculty vs Students Gaming Battle',
+          description: 'Epic showdown where MIT AOE faculty members take on students in various games. Let\'s see who really dominates!',
+          author: 'StudentRevolt',
+          authorId: '4',
+          votes: 22,
+          userVote: null,
+          category: 'activity',
+          createdAt: new Date('2024-01-13')
+        }]
+
+        // Save to cache
+        ideasAutoSave.saveData(mockIdeas)
+        setIdeas(mockIdeas)
+      } catch (error) {
+        showError('Loading Failed', 'Failed to load ideas. Please refresh the page.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadIdeas()
+  }, [showError, ideasAutoSave])
+
+  // Enhanced validation function
+  const validateIdeaForm = (): string | null => {
+    const validation = validateIdeaFormEnhanced()
+    if (!validation.isValid) {
+      // Return the first error found
+      const firstError = Object.values(validation.errors)[0]
+      return firstError || 'Validation failed'
+    }
+    return null
+  }
+
+  // Save search terms to history
+  const handleSearch = useCallback((term: string) => {
+    if (term.trim()) {
+      addSearchTerm(term.trim())
+    }
+    setSearchTerm(term)
+  }, [addSearchTerm])
+
+  // Save preferences when filter changes
+  useEffect(() => {
+    savePreferences({
+      defaultCategory: filter !== 'all' ? filter : undefined
+    })
+  }, [filter, savePreferences])
+
+  const handleSubmitIdea = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const validationError = validateIdeaForm()
+    if (validationError) {
+      showError('Validation Error', validationError)
+      return
+    }
+
+    setSubmitting(true)
+
+    try {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 800))
+
+      // Sanitize inputs using our validation utilities
+      const titleValidation = validateContent(newIdea.title.trim())
+      const descriptionValidation = validateContent(newIdea.description.trim())
+
+      const idea: Idea = {
+        id: Date.now().toString(),
+        title: titleValidation.sanitized,
+        description: descriptionValidation.sanitized,
+        author: user?.username || 'Anonymous',
+        authorId: user?.id || '0',
+        votes: 0,
+        userVote: null,
+        category: newIdea.category,
+        createdAt: new Date()
+      }
+
+      const updatedIdeas = [idea, ...ideas]
+      setIdeas(updatedIdeas)
+
+      // Clear form and draft
+      setNewIdea({ title: '', description: '', category: 'activity' })
+      const drafts = getDrafts()
+      if (drafts.length > 0) {
+        drafts.forEach(draft => {
+          if (draft.title === newIdea.title || draft.description === newIdea.description) {
+            deleteDraft(draft.id)
+          }
+        })
+      }
+
+      setShowForm(false)
+      showSuccess('Idea Added!', 'Your epic gaming idea has been shared with the community')
+
+      // Auto-save updated ideas
+      ideasAutoSave.saveData(updatedIdeas)
+    } catch (error) {
+      showError('Submission Failed', 'Failed to submit your idea. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleVote = async (ideaId: string, voteType: 'up' | 'down') => {
+    try {
+      // Optimistic UI update
+      const updatedIdeas = ideas.map(idea => {
+        if (idea.id === ideaId) {
+          let newVotes = idea.votes
+          let newUserVote: 'up' | 'down' | null = voteType
+
+          // Handle vote logic
+          if (idea.userVote === voteType) {
+            // Remove vote
+            newUserVote = null
+            newVotes = voteType === 'up' ? newVotes - 1 : newVotes + 1
+          } else if (idea.userVote) {
+            // Change vote
+            newVotes = voteType === 'up' ? newVotes + 2 : newVotes - 2
+          } else {
+            // New vote
+            newVotes = voteType === 'up' ? newVotes + 1 : newVotes - 1
+          }
+
+          return { ...idea, votes: newVotes, userVote: newUserVote }
+        }
+        return idea
+      })
+
+      setIdeas(updatedIdeas)
+
+      // Simulate network request
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      // Auto-save updated ideas
+      ideasAutoSave.saveData(updatedIdeas)
+
+      // In a real app, handle network errors and rollback on failure
+      showSuccess('Vote Recorded!', `Your ${voteType}vote has been counted`)
+    } catch (error) {
+      // Rollback the optimistic update
+      showError('Vote Failed', 'Failed to record your vote. Please try again.')
+      // In a real app, you'd revert the optimistic update here
+    }
   }
 
   const filteredIdeas = ideas
     .filter(idea => filter === 'all' || idea.category === filter)
-    .filter(idea => 
+    .filter(idea =>
       idea.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       idea.description.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => b.votes - a.votes)
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Animated Background Elements */}
@@ -139,23 +350,24 @@ export default function Dashboard() {
       {/* Navigation */}
       <nav className="bg-black/20 backdrop-blur-lg border-b border-gray-700 relative z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">            <Link to="/" className="flex items-center space-x-2 group">
+          <div className="flex justify-between items-center">
+            <Link to="/" className="flex items-center space-x-2 group">
               <Gamepad2 className="h-8 w-8 text-purple-400 group-hover:text-purple-300 transition-all duration-300 group-hover:rotate-12" />
               <div className="flex flex-col">
                 <span className="text-2xl font-bold text-white gaming-font group-hover:glow-purple transition-all duration-300">Gamesta</span>
                 <span className="text-xs text-purple-300 font-medium">MIT Academy of Engineering</span>
               </div>
             </Link>
-            
+
             <div className="flex items-center space-x-4">
-              <Link 
-                to="/profile" 
+              <Link
+                to="/profile"
                 className="flex items-center space-x-2 text-gray-300 hover:text-white transition-all duration-200 hover:glow-purple px-3 py-2 rounded-lg hover:bg-white/10"
               >
                 <User className="h-5 w-5" />
                 <span className="gaming-font">{user?.username}</span>
               </Link>
-              <button 
+              <button
                 onClick={logout}
                 className="flex items-center space-x-2 text-gray-300 hover:text-white transition-all duration-200 hover:glow-pink px-3 py-2 rounded-lg hover:bg-white/10"
               >
@@ -167,7 +379,8 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">        {/* Header */}
+      <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">
+        {/* Header */}
         <div className="flex justify-between items-center mb-8 slide-in">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2 gaming-font glow-purple">Idea Hub</h1>
@@ -190,7 +403,9 @@ export default function Dashboard() {
             <Plus className="h-5 w-5" />
             <span>Add Epic Idea</span>
           </button>
-        </div>        {/* Filters and Search */}
+        </div>
+
+        {/* Filters and Search */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8 slide-in delay-200">
           <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-lg px-4 py-2 border border-white/20">
             <Filter className="h-5 w-5 text-gray-400" />
@@ -205,82 +420,88 @@ export default function Dashboard() {
               <option value="other" className="bg-gray-800">⚡ Other</option>
             </select>
           </div>
-          
+
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search for epic ideas..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-lg transition-all duration-300 hover:bg-white/20 focus:shadow-lg focus:shadow-purple-500/20"
             />
           </div>
-        </div>        {/* Ideas List */}
+        </div>
+
+        {/* Ideas List */}
         <div className="grid gap-6">
-          {filteredIdeas.map((idea, index) => (
-            <div key={idea.id} className={`bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] slide-in`} style={{animationDelay: `${index * 100}ms`}}>
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold gaming-font ${
-                      idea.category === 'tournament' ? 'bg-purple-600 text-white glow-purple' :
-                      idea.category === 'activity' ? 'bg-blue-600 text-white glow-blue' :
-                      'bg-gray-600 text-white'
-                    }`}>
-                      {idea.category === 'tournament' ? '🏆 Tournament' :
-                       idea.category === 'activity' ? '🎮 Activity' : '⚡ Other'}
-                    </span>
-                    <span className="text-gray-400 text-sm">by <span className="text-purple-300 gaming-font">{idea.author}</span></span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-white mb-2 gaming-font hover:glow-purple transition-all duration-300">{idea.title}</h3>
-                  <p className="text-gray-300 mb-4 leading-relaxed">{idea.description}</p>
-                  <div className="text-gray-400 text-sm flex items-center space-x-4">
-                    <span>{idea.createdAt.toLocaleDateString()}</span>
-                    <div className="flex items-center space-x-1">
-                      <Zap className="h-4 w-4 text-yellow-400" />
-                      <span className="text-yellow-400 font-bold">{idea.votes > 10 ? 'Hot!' : 'New'}</span>
+          {loading ? (
+            // Loading skeleton
+            Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonCard key={index} />
+            ))
+          ) : filteredIdeas.length > 0 ? (
+            filteredIdeas.map((idea, index) => (
+              <div key={idea.id} className={`bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 hover:border-purple-400/50 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20 transform hover:scale-[1.02] slide-in`} style={{ animationDelay: `${index * 100}ms` }}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold gaming-font ${idea.category === 'tournament' ? 'bg-purple-600 text-white glow-purple' :
+                        idea.category === 'activity' ? 'bg-blue-600 text-white glow-blue' :
+                          'bg-gray-600 text-white'
+                        }`}>
+                        {idea.category === 'tournament' ? '🏆 Tournament' :
+                          idea.category === 'activity' ? '🎮 Activity' : '⚡ Other'}
+                      </span>
+                      <span className="text-gray-400 text-sm">by <span className="text-purple-300 gaming-font">{idea.author}</span></span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-white mb-2 gaming-font hover:glow-purple transition-all duration-300">{idea.title}</h3>
+                    <p className="text-gray-300 mb-4 leading-relaxed">{idea.description}</p>
+                    <div className="text-gray-400 text-sm flex items-center space-x-4">
+                      <span>{idea.createdAt.toLocaleDateString()}</span>
+                      <div className="flex items-center space-x-1">
+                        <Zap className="h-4 w-4 text-yellow-400" />
+                        <span className="text-yellow-400 font-bold">{idea.votes > 10 ? 'Hot!' : 'New'}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="flex flex-col items-center space-y-2 ml-6 bg-black/20 rounded-lg p-3 backdrop-blur-lg">
-                  <button
-                    onClick={() => handleVote(idea.id, 'up')}
-                    className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${
-                      idea.userVote === 'up' ? 'bg-green-600 text-white shadow-lg shadow-green-500/50 glow-green' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-green-400'
-                    }`}
-                  >
-                    <ChevronUp className="h-6 w-6" />
-                  </button>
-                  <span className="text-white font-bold text-lg gaming-font glow-white">{idea.votes}</span>
-                  <button
-                    onClick={() => handleVote(idea.id, 'down')}
-                    className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${
-                      idea.userVote === 'down' ? 'bg-red-600 text-white shadow-lg shadow-red-500/50 glow-red' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-red-400'
-                    }`}
-                  >
-                    <ChevronDown className="h-6 w-6" />
-                  </button>
+
+                  <div className="flex flex-col items-center space-y-2 ml-6 bg-black/20 rounded-lg p-3 backdrop-blur-lg">
+                    <button
+                      onClick={() => handleVote(idea.id, 'up')}
+                      className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${idea.userVote === 'up' ? 'bg-green-600 text-white shadow-lg shadow-green-500/50 glow-green' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-green-400'
+                        }`}
+                    >
+                      <ChevronUp className="h-6 w-6" />
+                    </button>
+                    <span className="text-white font-bold text-lg gaming-font glow-white">{idea.votes}</span>
+                    <button
+                      onClick={() => handleVote(idea.id, 'down')}
+                      className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${idea.userVote === 'down' ? 'bg-red-600 text-white shadow-lg shadow-red-500/50 glow-red' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-red-400'
+                        }`}
+                    >
+                      <ChevronDown className="h-6 w-6" />
+                    </button>
+                  </div>
                 </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center py-12 slide-in">
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-white/20">
+                <Sparkles className="h-16 w-16 text-purple-400 mx-auto mb-4 animate-pulse" />
+                <p className="text-gray-400 text-lg gaming-font">No epic ideas found yet!</p>
+                <p className="text-gray-500 mt-2">Be the first legendary gamer to share your vision!</p>
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="mt-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 gaming-font"
+                >
+                  Create First Idea
+                </button>
+              </div>
             </div>
-          ))}
-        </div>        {filteredIdeas.length === 0 && (
-          <div className="text-center py-12 slide-in">
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-white/20">
-              <Sparkles className="h-16 w-16 text-purple-400 mx-auto mb-4 animate-pulse" />
-              <p className="text-gray-400 text-lg gaming-font">No epic ideas found yet!</p>
-              <p className="text-gray-500 mt-2">Be the first legendary gamer to share your vision!</p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="mt-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 gaming-font"
-              >
-                Create First Idea
-              </button>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Add Idea Modal */}
@@ -304,7 +525,7 @@ export default function Dashboard() {
                   <option value="other" className="bg-gray-800">⚡ Other</option>
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2 gaming-font">Title</label>
                 <input
@@ -316,7 +537,7 @@ export default function Dashboard() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2 gaming-font">Description</label>
                 <textarea
@@ -328,15 +549,16 @@ export default function Dashboard() {
                   required
                 />
               </div>
-              
+
               <div className="flex space-x-4 pt-2">
-                <button
+                <LoadingButton
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 gaming-font flex items-center justify-center"
+                  isLoading={submitting}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 gaming-font"
                 >
                   <Plus className="h-5 w-5 mr-2" />
                   Launch Idea
-                </button>
+                </LoadingButton>
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
