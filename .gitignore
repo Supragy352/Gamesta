@@ -100,5 +100,5 @@ public
 tmp/
 temp/
 
-# Supabase
-.supabase
+# Copilot command runner script
+copilot-command-runner.ps1

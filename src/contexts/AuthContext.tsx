@@ -1,14 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { storageHelpers } from '../utils/localStorage'
-import { validateForm, VALIDATION_RULES } from '../utils/validation'
-
-interface User {
-  id: string
-  email: string
-  username: string
-  avatar?: string
-  bio?: string
-}
+import { supabase, type User } from '../lib/supabaseClient'
+import { DatabaseService } from '../services/database/databaseService'
+import { logger } from '../utils/logger'
+import { validateForm, VALIDATION_RULES } from '../utils/validation/validation'
 
 interface AuthContextType {
   user: User | null
@@ -27,52 +21,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
   useEffect(() => {
-    // Check if user is logged in using new storage utilities
+    // Set up Supabase auth state listener
     setLoading(true)
-    try {
-      const savedUser = storageHelpers.getUser() as User | null
-      if (savedUser && typeof savedUser === 'object' && savedUser.id && savedUser.email) {
-        setUser(savedUser)
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
+      if (session?.user) {
+        try {
+          const userData = await DatabaseService.getCurrentUser()
+          setUser(userData)
+        } catch (error) {
+          console.error('Error loading user data:', error)
+          setError('Failed to load user data')
+        }
+      } else {
+        setUser(null)
       }
-    } catch (parseError) {
-      console.error('Error loading user data:', parseError)
-      storageHelpers.saveUser(null) // Clear corrupted data
+      setLoading(false)
+    })
+
+    // Check current session
+    const checkSession = async () => {
+      try {
+        const userData = await DatabaseService.getCurrentUser()
+        setUser(userData)
+      } catch (error) {
+        console.error('Error checking session:', error)
+      }
+      setLoading(false)
     }
-    setLoading(false)
+
+    checkSession()
+
+    return () => subscription.unsubscribe()
   }, [])
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setError(null)
+      logger.info('AUTH', `Login attempt for email: ${email}`)
 
       // Enhanced validation using new validation utilities
       const validation = validateForm({ email, password }, VALIDATION_RULES.LOGIN)
       if (!validation.isValid) {
         const firstError = Object.values(validation.errors)[0]
+        logger.warn('AUTH', `Login validation failed: ${firstError}`)
         return { success: false, error: firstError }
       }
 
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      // Mock authentication - replace with real API call
-      const mockUser: User = {
-        id: '1',
-        email: validation.data.email,
-        username: validation.data.email.split('@')[0],
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${validation.data.email}`
-      }
-
-      setUser(mockUser)
-      storageHelpers.saveUser(mockUser) // Use new storage helper
+      // Use real Supabase authentication
+      await DatabaseService.signIn(email, password)
+      logger.info('AUTH', `Login successful for email: ${email}`)
       return { success: true }
-    } catch (networkError) {
-      const errorMessage = 'Login failed. Please check your connection and try again.'
+    } catch (error: any) {
+      const errorMessage = error.message || 'Login failed. Please check your credentials and try again.'
+      logger.error('AUTH', `Login failed for email: ${email} - ${errorMessage}`)
       setError(errorMessage)
       return { success: false, error: errorMessage }
     }
   }
+
   const register = async (email: string, password: string, username: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setError(null)
@@ -84,74 +91,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: firstError }
       }
 
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1500))      // Check if user already exists (mock check)
-      const existingUser = storageHelpers.getUser() as User | null
-      if (existingUser && existingUser.email === validation.data.email) {
-        return { success: false, error: 'An account with this email already exists' }
-      }
-
-      // Mock registration - replace with real API call
-      const mockUser: User = {
-        id: Date.now().toString(),
-        email: validation.data.email,
-        username: validation.data.username,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${validation.data.username}`
-      }
-
-      setUser(mockUser)
-      storageHelpers.saveUser(mockUser) // Use new storage helper
+      // Use real Supabase authentication and profile creation
+      await DatabaseService.signUp(email, password, username)
       return { success: true }
-    } catch (networkError) {
-      const errorMessage = 'Registration failed. Please check your connection and try again.'
+    } catch (error: any) {
+      const errorMessage = error.message || 'Registration failed. Please try again.'
       setError(errorMessage)
       return { success: false, error: errorMessage }
     }
   }
-  const logout = () => {
+
+  const logout = async () => {
     try {
+      await DatabaseService.signOut()
       setUser(null)
       setError(null)
-      storageHelpers.saveUser(null) // Use new storage helper
-    } catch (storageError) {
-      console.error('Error during logout:', storageError)
-      // Continue with logout even if localStorage fails
+    } catch (error) {
+      console.error('Error during logout:', error)
+      // Continue with logout even if there's an error
       setUser(null)
       setError(null)
     }
   }
 
-  const updateProfile = async (updates: Partial<User>): Promise<{ success: boolean; error?: string }> => {
+  const updateProfile = async (updates: Partial<Pick<User, 'username' | 'bio'>>): Promise<{ success: boolean; error?: string }> => {
     try {
-      setError(null)
-
-      if (!user) return { success: false, error: 'No user logged in' }
-
-      // Validate updates using new validation utilities
-      const validationData: any = {}
-      if (updates.username) validationData.username = updates.username
-      if (updates.email) validationData.email = updates.email
-
-      if (Object.keys(validationData).length > 0) {
-        const validation = validateForm(validationData, VALIDATION_RULES.PROFILE_UPDATE)
-        if (!validation.isValid) {
-          const firstError = Object.values(validation.errors)[0]
-          return { success: false, error: firstError }
-        }
-        // Use validated data
-        Object.assign(updates, validation.data)
+      if (!user) {
+        return { success: false, error: 'User not authenticated' }
       }
 
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 800))
-
-      const updatedUser = { ...user, ...updates }
+      const updatedUser = await DatabaseService.updateUserProfile(user.id, updates)
       setUser(updatedUser)
-      storageHelpers.saveUser(updatedUser) // Use new storage helper
       return { success: true }
-    } catch (networkError) {
-      const errorMessage = 'Failed to update profile. Please try again.'
-      setError(errorMessage)
+    } catch (error: any) {
+      const errorMessage = error.message || 'Failed to update profile'
       return { success: false, error: errorMessage }
     }
   }

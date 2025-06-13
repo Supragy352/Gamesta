@@ -1,13 +1,16 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
-import Dashboard from './components/Dashboard'
-import { ErrorBoundary } from './components/ErrorBoundary'
-import FeatureTest from './components/FeatureTest'
-import Landing from './components/Landing'
-import { LoadingSpinner } from './components/LoadingComponents'
-import Login from './components/Login'
-import Profile from './components/Profile'
+import AdminDashboard from './components/admin/AdminDashboard'
+import Login from './components/auth/Login'
+import Dashboard from './components/core/Dashboard'
+import Landing from './components/core/Landing'
+import Profile from './components/core/Profile'
+import { DatabaseTest } from './components/testing/DatabaseTest'
+import FeatureTest from './components/testing/FeatureTest'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
+import { LoadingSpinner } from './components/ui/LoadingComponents'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider } from './contexts/ToastContext'
+import './utils/dbConnectionTest'; // Temporary: Auto-run database connection test
 
 function App() {
   // Use basename only in production (GitHub Pages)
@@ -23,7 +26,9 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/test" element={<FeatureTest />} />
+              <Route path="/db-test" element={<DatabaseTest />} />
             </Routes>
             </div>
           </Router>

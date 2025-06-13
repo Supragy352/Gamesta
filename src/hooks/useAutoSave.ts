@@ -2,7 +2,7 @@
 // Provides automatic saving and recovery of form data to prevent data loss
 
 import { useCallback, useEffect, useRef } from 'react'
-import { storage, STORAGE_CONFIGS } from '../utils/localStorage'
+import { storage, STORAGE_CONFIGS } from '../utils/storage/localStorage'
 
 // Hook for auto-saving form data
 export function useAutoSave<T extends Record<string, any>>(
