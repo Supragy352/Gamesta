@@ -13,9 +13,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false)
   const { login, register } = useAuth()
-  const { showSuccess, showError } = useToast()
+  const { showSuccess, showError, showInfo } = useToast()
   const navigate = useNavigate()
 
   const validateForm = (): string | null => {
@@ -27,12 +27,22 @@ export default function Login() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) return 'Please enter a valid email address'
 
+    // Password validation
+    if (password.length < 6) return 'Password must be at least 6 characters long'
+
+    // Username validation for signup
+    if (!isLogin) {
+      if (username.length < 3) return 'Username must be at least 3 characters long'
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) return 'Username can only contain letters, numbers, and underscores'
+    }
+
     return null
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setShowVerificationMessage(false)
 
     // Client-side validation
     const validationError = validateForm()
@@ -45,26 +55,59 @@ export default function Login() {
     setLoading(true)
 
     try {
-      let result
       if (isLogin) {
-        result = await login(email.trim(), password)
+        // LOGIN FLOW
+        const result = await login(email.trim(), password)
+
         if (result.success) {
           showSuccess('Welcome back!', 'Successfully logged into the gaming arena')
           navigate('/dashboard')
         } else {
-          const errorMsg = result.error || 'Login failed'
-          setError(errorMsg)
-          showError('Login Failed', errorMsg)
+          // Check if user doesn't exist
+          if (result.userExists === false) {
+            setError('No account found with this email.')
+            showInfo('Account Not Found', 'Would you like to create an account with this email?')
+            // Auto-switch to signup mode
+            setTimeout(() => {
+              setIsLogin(false)
+              setError('')
+            }, 2000)
+          } else {
+            const errorMsg = result.error || 'Login failed'
+            setError(errorMsg)
+            showError('Login Failed', errorMsg)
+          }
         }
       } else {
-        result = await register(email.trim(), password, username.trim())
+        // SIGNUP FLOW
+        const result = await register(email.trim(), password, username.trim())
+
         if (result.success) {
-          showSuccess('Account Created!', 'Welcome to the MIT AOE Gaming Community')
-          navigate('/dashboard')
+          if (result.needsVerification) {
+            setShowVerificationMessage(true)
+            showSuccess(
+              'Account Created!',
+              'Please check your email and click the verification link to complete your registration.'
+            )
+            setError('')
+          } else {
+            showSuccess('Account Created!', 'Welcome to the MIT AOE Gaming Community')
+            navigate('/dashboard')
+          }
         } else {
           const errorMsg = result.error || 'Registration failed'
           setError(errorMsg)
-          showError('Registration Failed', errorMsg)
+
+          // If user already exists, suggest login
+          if (errorMsg.includes('already exists')) {
+            showInfo('Account Exists', 'An account with this email already exists. Try logging in instead.')
+            setTimeout(() => {
+              setIsLogin(true)
+              setError('')
+            }, 2000)
+          } else {
+            showError('Registration Failed', errorMsg)
+          }
         }
       }
     } catch (err) {
@@ -174,7 +217,29 @@ export default function Login() {
                   {error}
                 </p>
               </div>
-            )}            <LoadingButton
+            )}
+
+            {showVerificationMessage && (
+              <div className="bg-green-500/20 border border-green-500 rounded-lg p-4 pulse-glow">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-green-500 rounded-full p-1 flex-shrink-0 mt-0.5">
+                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-green-300 font-semibold mb-1">Verification Email Sent!</h4>
+                    <p className="text-green-200 text-sm">
+                      We've sent a verification link to <strong>{email}</strong>.
+                      Please check your email and click the link to complete your registration.
+                    </p>
+                    <p className="text-green-200 text-xs mt-2 opacity-80">
+                      After verification, return here to log in to your new account.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}<LoadingButton
               type="submit"
               isLoading={loading}
               loadingText={isLogin ? 'Logging in...' : 'Creating account...'}

@@ -2,6 +2,7 @@ import { Activity, AlertTriangle, CheckCircle, Database, Eye, EyeOff, Lightbulb,
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { supabase } from '../../lib/supabaseClient';
 import { DatabaseService } from '../../services/database/databaseService';
 import { logger } from '../../utils/logger';
 import { testSupabaseConnection } from '../../utils/testConnection';
@@ -266,6 +267,81 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
+    // Fix missing user account for testing
+    const createMissingTestUser = async () => {
+        try {
+            logger.info('ADMIN', 'Creating missing test user profile...');
+
+            // Check if profile exists first
+            const { data: existingProfile, error: profileError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('email', 'mishra03supragya@gmail.com')
+                .single();
+
+            if (profileError && profileError.code !== 'PGRST116') {
+                return { success: false, error: profileError.message };
+            }
+
+            if (existingProfile) {
+                return { success: true, message: 'User profile already exists' };
+            }
+
+            // Try to authenticate first
+            let authUser = null;
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                authUser = user;
+
+                if (!authUser) {
+                    // Attempt login
+                    const loginResult = await DatabaseService.signIn('mishra03supragya@gmail.com', '123456789');
+                    authUser = loginResult.user;
+                }
+            } catch (loginError) {
+                return { success: false, error: `Authentication failed: ${loginError instanceof Error ? loginError.message : 'Unknown error'}` };
+            }
+
+            if (!authUser) {
+                return { success: false, error: 'No authenticated user found after login attempt' };
+            }
+
+            // Create user profile
+            const { data: newProfile, error: createError } = await supabase
+                .from('users')
+                .insert({
+                    id: authUser.id,
+                    email: authUser.email,
+                    username: authUser.email?.split('@')[0] || 'testuser',
+                    avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${authUser.email}`,
+                })
+                .select()
+                .single();
+
+            if (createError) {
+                return { success: false, error: createError.message };
+            }
+
+            // Create user preferences
+            const { error: prefError } = await supabase
+                .from('user_preferences')
+                .insert({
+                    user_id: authUser.id,
+                });
+
+            if (prefError) {
+                logger.warn('ADMIN', 'User preferences creation failed (non-critical)', prefError);
+            }
+
+            logger.info('ADMIN', 'Test user profile created successfully', newProfile);
+            return { success: true, message: 'User profile created successfully', data: newProfile };
+
+        } catch (error) {
+            logger.error('ADMIN', 'Unexpected error creating test user', error instanceof Error ? error : new Error('Unknown error'));
+            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        }
+    };
+
     const runDatabaseTests = async () => {
         setIsRunningTests(true);
         const results: TestResult[] = [];
@@ -289,7 +365,103 @@ const AdminDashboard: React.FC = () => {
                 });
             }
 
-            // Test 2: User Operations
+            // Test 2: User Existence Check (for login issue debugging)
+            try {
+                const startTime2 = Date.now();
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', 'mishra03supragya@gmail.com')
+                    .single();
+
+                const duration2 = Date.now() - startTime2;
+
+                if (error && error.code !== 'PGRST116') {
+                    throw error;
+                }
+
+                if (data) {
+                    results.push({
+                        name: 'Test User Existence',
+                        status: 'success',
+                        message: `User found in database: ${data.username || data.email}`,
+                        duration: duration2
+                    });
+                } else {
+                    results.push({
+                        name: 'Test User Existence',
+                        status: 'error',
+                        message: 'Test user not found in database - this explains login issues',
+                        duration: duration2
+                    });
+                }
+            } catch (error) {
+                results.push({
+                    name: 'Test User Existence',
+                    status: 'error',
+                    message: `User existence check failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+                });
+            }
+
+            // Test 3: User Login Test (main login issue test)
+            try {
+                const startTime3 = Date.now();
+                const loginResult = await DatabaseService.signIn('mishra03supragya@gmail.com', '123456789');
+                const duration3 = Date.now() - startTime3;
+
+                if (loginResult.user) {
+                    results.push({
+                        name: 'User Login Test',
+                        status: 'success',
+                        message: 'Login successful with test credentials',
+                        duration: duration3
+                    });
+                } else {
+                    results.push({
+                        name: 'User Login Test',
+                        status: 'error',
+                        message: 'Login failed - no user returned',
+                        duration: duration3
+                    });
+                }
+            } catch (error) {
+                results.push({
+                    name: 'User Login Test',
+                    status: 'error',
+                    message: `Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+                });
+            }
+
+            // Test 4: User Profile Retrieval
+            try {
+                const startTime4 = Date.now();
+                const profile = await DatabaseService.getCurrentUser();
+                const duration4 = Date.now() - startTime4;
+
+                if (profile) {
+                    results.push({
+                        name: 'User Profile Retrieval',
+                        status: 'success',
+                        message: `Profile retrieved: ${profile.email}`,
+                        duration: duration4
+                    });
+                } else {
+                    results.push({
+                        name: 'User Profile Retrieval',
+                        status: 'warning',
+                        message: 'No profile found - user may not be logged in',
+                        duration: duration4
+                    });
+                }
+            } catch (error) {
+                results.push({
+                    name: 'User Profile Retrieval',
+                    status: 'error',
+                    message: `Profile retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+                });
+            }
+
+            // Test 5: User Operations
             try {
                 const startTime2 = Date.now();
                 const users = await DatabaseService.getAllUsers();
@@ -821,6 +993,85 @@ const AdminDashboard: React.FC = () => {
                                     {isRunningTests ? <LoadingSpinner size="sm" /> : <Activity className="w-5 h-5" />}
                                     {isRunningTests ? 'Running Tests...' : 'Run Feature Tests'}
                                 </button>
+                            </div>
+                        </div>
+
+                        {/* Login Issue Debugging */}
+                        <div className="bg-red-900/20 backdrop-blur-md rounded-xl p-6 mb-6 border border-red-500/30">
+                            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
+                                <AlertTriangle className="w-6 h-6 text-red-400" />
+                                Login Issue Debugging
+                            </h3>
+                            <p className="text-gray-300 mb-6">Specific tools to diagnose and fix the login hanging issue</p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <button
+                                    onClick={async () => {
+                                        setIsRunningTests(true);
+                                        try {
+                                            const result = await createMissingTestUser();
+                                            if (result.success) {
+                                                showToast({ type: 'success', title: 'Success', message: result.message });
+                                            } else {
+                                                showToast({ type: 'error', title: 'Failed', message: result.error });
+                                            }
+                                        } catch (error) {
+                                            showToast({ type: 'error', title: 'Error', message: 'Unexpected error occurred' });
+                                        } finally {
+                                            setIsRunningTests(false);
+                                        }
+                                    }}
+                                    disabled={isRunningTests}
+                                    className="bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                                >
+                                    {isRunningTests ? <LoadingSpinner size="sm" /> : <Users className="w-5 h-5" />}
+                                    Fix Missing User Account
+                                </button>
+
+                                <button
+                                    onClick={async () => {
+                                        setIsRunningTests(true);
+                                        try {
+                                            // Quick login test
+                                            const startTime = Date.now();
+                                            const result = await DatabaseService.signIn('mishra03supragya@gmail.com', '123456789');
+                                            const duration = Date.now() - startTime;
+
+                                            if (result.user) {
+                                                showToast({
+                                                    type: 'success',
+                                                    title: 'Login Test Passed',
+                                                    message: `Login successful in ${duration}ms`
+                                                });
+                                            } else {
+                                                showToast({ type: 'error', title: 'Login Test Failed', message: 'No user returned' });
+                                            }
+                                        } catch (error) {
+                                            showToast({
+                                                type: 'error',
+                                                title: 'Login Test Failed',
+                                                message: error instanceof Error ? error.message : 'Unknown error'
+                                            });
+                                        } finally {
+                                            setIsRunningTests(false);
+                                        }
+                                    }}
+                                    disabled={isRunningTests}
+                                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                                >
+                                    {isRunningTests ? <LoadingSpinner size="sm" /> : <CheckCircle className="w-5 h-5" />}
+                                    Quick Login Test
+                                </button>
+                            </div>
+
+                            <div className="bg-black/30 rounded-lg p-4">
+                                <h4 className="text-white font-medium mb-2">Login Debugging Steps:</h4>
+                                <ol className="text-gray-300 text-sm space-y-1 list-decimal list-inside">
+                                    <li>First, run "Fix Missing User Account" to create the user profile if missing</li>
+                                    <li>Then run "Database Tests" to verify all operations work</li>
+                                    <li>Use "Quick Login Test" to verify the credentials work</li>
+                                    <li>Check the logs tab for detailed error information</li>
+                                </ol>
                             </div>
                         </div>
 

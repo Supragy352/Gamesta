@@ -100,19 +100,22 @@ class GamestaLogger {
       sessionId: this.sessionId
     };
   }
-
   private getCurrentUserId(): string | undefined {
     try {
-      // Try to get user from auth context
-      const authData = localStorage.getItem('sb-pzrpnenlhphwjfpatdzi-auth-token');
-      if (authData) {
-        const parsed = JSON.parse(authData);
-        return parsed?.user?.id;
+      // Try to get user ID from a safer source without exposing auth tokens
+      // First check if there's a logged user indicator in localStorage (without token data)
+      const userSession = localStorage.getItem('gamesta_user_session');
+      if (userSession) {
+        const parsed = JSON.parse(userSession);
+        return parsed?.userId;
       }
+
+      // Fallback: Return 'anonymous' for public logs without exposing sensitive data
+      return 'anonymous';
     } catch (error) {
       // Silently fail if we can't get user ID
+      return 'anonymous';
     }
-    return undefined;
   }
 
   private log(level: LogLevel, category: string, message: string, data?: any, error?: Error): void {
@@ -191,10 +194,11 @@ class GamestaLogger {
       this.logs = this.logs.slice(-this.config.maxStoredLogs);
     }
   }
-
   private logToRemote(entry: LogEntry): void {
     // TODO: Implement remote logging to Supabase or external service
     // This could send logs to a dedicated logs table or external monitoring service
+    // For now, this is a placeholder that accepts the entry parameter
+    console.debug('Remote logging not yet implemented for:', entry.category);
   }
 
   // Public logging methods
@@ -229,10 +233,8 @@ class GamestaLogger {
 
     if (options.level !== undefined) {
       filtered = filtered.filter(log => log.level >= options.level!);
-    }
-
-    if (options.category) {
-      filtered = filtered.filter(log => log.category === options.category.toUpperCase());
+    } if (options.category) {
+      filtered = filtered.filter(log => log.category === options.category!.toUpperCase());
     }
 
     if (options.since) {

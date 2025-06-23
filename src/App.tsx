@@ -1,9 +1,11 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import AdminDashboard from './components/admin/AdminDashboard'
+import EmailVerified from './components/auth/EmailVerified'
 import Login from './components/auth/Login'
 import Dashboard from './components/core/Dashboard'
 import Landing from './components/core/Landing'
 import Profile from './components/core/Profile'
+import LoginDebugPage from './components/debug/LoginDebugPage'
 import { DatabaseTest } from './components/testing/DatabaseTest'
 import FeatureTest from './components/testing/FeatureTest'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
@@ -24,11 +26,13 @@ function App() {
             <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">              <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/email-verified" element={<EmailVerified />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/test" element={<FeatureTest />} />
               <Route path="/db-test" element={<DatabaseTest />} />
+              <Route path="/debug-login" element={<LoginDebugPage />} />
             </Routes>
             </div>
           </Router>
