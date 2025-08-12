@@ -6,8 +6,6 @@ import Dashboard from './components/core/Dashboard'
 import Landing from './components/core/Landing'
 import Profile from './components/core/Profile'
 import LoginDebugPage from './components/debug/LoginDebugPage'
-import { DatabaseTest } from './components/testing/DatabaseTest'
-import FeatureTest from './components/testing/FeatureTest'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { LoadingSpinner } from './components/ui/LoadingComponents'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -30,8 +28,6 @@ function App() {
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/test" element={<FeatureTest />} />
-              <Route path="/db-test" element={<DatabaseTest />} />
               <Route path="/debug-login" element={<LoginDebugPage />} />
             </Routes>
             </div>

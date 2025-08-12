@@ -204,7 +204,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({ maxHeight = '600px' }) => 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           {Object.entries(stats.byLevel).map(([level, count]) => (
             <div key={level} className="bg-black/20 rounded-lg p-3 text-center">
-              <div className="text-lg font-bold text-white">{count}</div>
+              <div className="text-lg font-bold text-white">{String(count)}</div>
               <div className="text-sm text-gray-300">{level}</div>
             </div>
           ))}

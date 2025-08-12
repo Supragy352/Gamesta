@@ -1,12 +1,12 @@
 import { ChevronDown, ChevronUp, Gamepad2, LogOut, Plus, Search, Sparkles, Target, Trophy, User, Zap } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { useToast } from '../contexts/ToastContext'
-import { type Category, type Idea } from '../lib/supabase'
-import { DatabaseService } from '../services/databaseNew'
-import { validateForm, VALIDATION_RULES } from '../utils/validation'
-import { LoadingButton, SkeletonCard } from './LoadingComponents'
+import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
+import { type Category, type Idea } from '../../lib/supabaseClient'
+import { DatabaseService } from '../../services/database/databaseService'
+import { validateForm, VALIDATION_RULES } from '../../utils/validation/validation'
+import { LoadingButton, SkeletonCard } from '../ui/LoadingComponents'
 
 export default function Dashboard() {
     const { user, logout } = useAuth()
@@ -61,7 +61,8 @@ export default function Dashboard() {
         })
 
         if (!validation.isValid) {
-            return Object.values(validation.errors)[0] || 'Validation failed'
+            const firstError = Object.values(validation.errors)[0]
+            return typeof firstError === 'string' ? firstError : 'Validation failed'
         }
         return null
     }

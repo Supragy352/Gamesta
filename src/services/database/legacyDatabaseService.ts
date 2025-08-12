@@ -1,4 +1,4 @@
-import { supabase, type Idea, type User, type Vote } from '../lib/supabase'
+import { supabase, type Idea, type User, type Vote } from '../../lib/supabaseClient'
 
 export class DatabaseService {
     // Auth operations

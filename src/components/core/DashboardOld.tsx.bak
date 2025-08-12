@@ -1,13 +1,13 @@
 import { ChevronDown, ChevronUp, Filter, Gamepad2, LogOut, Plus, Search, Sparkles, Target, Trophy, User, Zap } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { useToast } from '../contexts/ToastContext'
-import { useAutoSave, useDraftManager, useSearchHistory, useUserPreferences } from '../hooks/useAutoSave'
-import { type Category, type Idea } from '../lib/supabase'
-import { DatabaseService } from '../services/databaseNew'
-import { FormValidation, validateContent, validateForm, VALIDATION_RULES } from '../utils/validation'
-import { LoadingButton, SkeletonCard } from './LoadingComponents'
+import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
+import { useAutoSave, useDraftManager, useSearchHistory, useUserPreferences } from '../../hooks/useAutoSave'
+import { type Category, type Idea } from '../../lib/supabaseClient'
+import { DatabaseService } from '../../services/database/databaseService'
+import { FormValidation, validateContent, validateForm, VALIDATION_RULES } from '../../utils/validation/validation'
+import { LoadingButton, SkeletonCard } from '../ui/LoadingComponents'
 
 export default function Dashboard() {
   const { user, logout } = useAuth()
@@ -31,7 +31,7 @@ export default function Dashboard() {
     onSave: () => console.log('Ideas cached successfully')
   })
 
-  const { saveDraft, getDrafts, deleteDraft } = useDraftManager()
+  const { saveDraft, getDrafts } = useDraftManager()
   const { savePreferences, getPreferences } = useUserPreferences()
   const { addSearchTerm } = useSearchHistory()
 
@@ -43,6 +43,7 @@ export default function Dashboard() {
       if (data.title || data.description) {
         saveDraft({
           ...data,
+          category: data.category_id, // Convert category_id to category for draft compatibility
           timestamp: Date.now()
         })
       }
