@@ -169,8 +169,8 @@ export const LogViewer: React.FC<LogViewerProps> = ({ maxHeight = '600px' }) => 
           <button
             onClick={() => setIsAutoRefresh(!isAutoRefresh)}
             className={`px-3 py-2 rounded-lg transition-colors ${isAutoRefresh
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+              ? 'bg-green-600 text-white'
+              : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
               }`}
           >
             <RefreshCw className={`w-4 h-4 ${isAutoRefresh ? 'animate-spin' : ''}`} />
