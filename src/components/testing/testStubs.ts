@@ -2,48 +2,48 @@
 // This file can be properly implemented later
 
 export const useDraftManager = () => ({
-    saveDraft: () => { },
+    saveDraft: (_draft: any) => { },
     getDrafts: () => [],
 })
 
 export const useUserPreferences = () => ({
-    savePreferences: () => { },
+    savePreferences: (_prefs: any) => { },
     getPreferences: () => ({}),
 })
 
 export const useSearchHistory = () => ({
-    addSearchTerm: () => { },
+    addSearchTerm: (_term: string) => { },
     getSearchHistory: () => [],
 })
 
 export const UserStorage = {
-    set: () => { },
+    set: (_data: any) => { },
     get: () => null,
 }
 
 export const IdeasCacheStorage = {
-    set: () => { },
+    set: (_data: any) => { },
     get: () => [],
 }
 
 export const DraftsStorage = {
-    set: () => { },
+    set: (_data: any) => { },
     get: () => [],
 }
 
 export const UserPreferencesStorage = {
-    set: () => { },
+    set: (_data: any) => { },
     get: () => ({}),
 }
 
 export const SearchHistoryStorage = {
-    set: () => { },
+    set: (_data: any) => { },
     get: () => [],
 }
 
 export const createStorageBackup = () => ({})
 
-export const validateEmail = (email: string) => email.includes('@')
-export const validatePassword = (password: string) => password.length >= 6
-export const validateUsername = (username: string) => username.length >= 3
-export const validateContent = (content: string) => content
+export const validateEmail = (email: string) => ({ isValid: email.includes('@') })
+export const validatePassword = (password: string) => ({ isValid: password.length >= 6 })
+export const validateUsername = (username: string) => ({ isValid: username.length >= 3 })
+export const validateContent = (content: string) => ({ sanitized: content.replace(/<script>/g, '') })

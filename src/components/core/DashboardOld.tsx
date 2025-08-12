@@ -55,7 +55,7 @@ export default function Dashboard() {
     const formData = {
       title: newIdea.title,
       description: newIdea.description,
-      category: newIdea.category
+      category: newIdea.category_id // Fix: use category_id from state
     }
 
     const validationRules = {
@@ -122,7 +122,7 @@ export default function Dashboard() {
           setNewIdea({
             title: latestDraft.title || '',
             description: latestDraft.description || '',
-            category: latestDraft.category || 'activity'
+            category_id: latestDraft.category || 'activity' // Fix: use category_id
           })
         }
       } catch (error) {
@@ -358,22 +358,22 @@ export default function Dashboard() {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold gaming-font ${idea.category === 'tournament' ? 'bg-purple-600 text-white glow-purple' :
-                        idea.category === 'activity' ? 'bg-blue-600 text-white glow-blue' :
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold gaming-font ${idea.category?.name === 'tournament' ? 'bg-purple-600 text-white glow-purple' :
+                        idea.category?.name === 'activity' ? 'bg-blue-600 text-white glow-blue' :
                           'bg-gray-600 text-white'
                         }`}>
-                        {idea.category === 'tournament' ? '🏆 Tournament' :
-                          idea.category === 'activity' ? '🎮 Activity' : '⚡ Other'}
+                        {idea.category?.name === 'tournament' ? '🏆 Tournament' :
+                          idea.category?.name === 'activity' ? '🎮 Activity' : '⚡ Other'}
                       </span>
-                      <span className="text-gray-400 text-sm">by <span className="text-purple-300 gaming-font">{idea.author}</span></span>
+                      <span className="text-gray-400 text-sm">by <span className="text-purple-300 gaming-font">{idea.author?.username}</span></span>
                     </div>
                     <h3 className="text-xl font-semibold text-white mb-2 gaming-font hover:glow-purple transition-all duration-300">{idea.title}</h3>
                     <p className="text-gray-300 mb-4 leading-relaxed">{idea.description}</p>
                     <div className="text-gray-400 text-sm flex items-center space-x-4">
-                      <span>{idea.createdAt.toLocaleDateString()}</span>
+                      <span>{new Date(idea.created_at).toLocaleDateString()}</span>
                       <div className="flex items-center space-x-1">
                         <Zap className="h-4 w-4 text-yellow-400" />
-                        <span className="text-yellow-400 font-bold">{idea.votes > 10 ? 'Hot!' : 'New'}</span>
+                        <span className="text-yellow-400 font-bold">{idea.upvotes > 10 ? 'Hot!' : 'New'}</span>
                       </div>
                     </div>
                   </div>
@@ -381,15 +381,15 @@ export default function Dashboard() {
                   <div className="flex flex-col items-center space-y-2 ml-6 bg-black/20 rounded-lg p-3 backdrop-blur-lg">
                     <button
                       onClick={() => handleVote(idea.id, 'up')}
-                      className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${idea.userVote === 'up' ? 'bg-green-600 text-white shadow-lg shadow-green-500/50 glow-green' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-green-400'
+                      className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${idea.user_vote === 'upvote' ? 'bg-green-600 text-white shadow-lg shadow-green-500/50 glow-green' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-green-400'
                         }`}
                     >
                       <ChevronUp className="h-6 w-6" />
                     </button>
-                    <span className="text-white font-bold text-lg gaming-font glow-white">{idea.votes}</span>
+                    <span className="text-white font-bold text-lg gaming-font glow-white">{idea.net_votes || 0}</span>
                     <button
                       onClick={() => handleVote(idea.id, 'down')}
-                      className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${idea.userVote === 'down' ? 'bg-red-600 text-white shadow-lg shadow-red-500/50 glow-red' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-red-400'
+                      className={`p-3 rounded-lg transition-all duration-300 transform hover:scale-110 ${idea.user_vote === 'downvote' ? 'bg-red-600 text-white shadow-lg shadow-red-500/50 glow-red' : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-red-400'
                         }`}
                     >
                       <ChevronDown className="h-6 w-6" />
@@ -428,8 +428,8 @@ export default function Dashboard() {
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2 gaming-font">Category</label>
                 <select
-                  value={newIdea.category}
-                  onChange={(e) => setNewIdea({ ...newIdea, category: e.target.value as Idea['category'] })}
+                  value={newIdea.category_id}
+                  onChange={(e) => setNewIdea({ ...newIdea, category_id: e.target.value })}
                   className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-lg transition-all duration-300"
                 >
                   <option value="tournament" className="bg-gray-800">🏆 Tournament</option>
