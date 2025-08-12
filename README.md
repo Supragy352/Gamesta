@@ -43,18 +43,23 @@ A modern React TypeScript web application for managing ideas and community engag
 
 ```
 Gamesta/
-├── src/
-│   ├── components/
-│   │   ├── Landing.tsx      # Home landing page
-│   │   ├── Login.tsx        # Authentication component
-│   │   ├── Dashboard.tsx    # Main idea hub
-│   │   └── Profile.tsx      # User profile page
-│   ├── contexts/
-│   │   └── AuthContext.tsx  # Authentication state management
-│   ├── App.tsx              # Main app component with routing
-│   ├── main.tsx            # React app entry point
-│   └── index.css           # Global styles with Tailwind
-├── public/                  # Static assets
+├── src/                     # Source code
+│   ├── components/          # React components
+│   ├── contexts/           # React context providers
+│   ├── services/           # API and database services
+│   ├── utils/              # Utility functions
+│   └── lib/                # Library configurations
+├── scripts/                # Utility scripts (organized by category)
+│   ├── database/           # SQL scripts and DB utilities
+│   ├── testing/            # Test scripts
+│   └── utilities/          # General utility scripts
+├── docs/                   # Documentation
+│   ├── admin/              # Admin-related docs
+│   ├── deployment/         # Deployment guides
+│   ├── development/        # Development docs
+│   └── project/            # Project documentation
+├── config/                 # Configuration files
+├── .vscode/                # VS Code settings
 ├── package.json            # Project dependencies
 └── README.md              # This file
 ```

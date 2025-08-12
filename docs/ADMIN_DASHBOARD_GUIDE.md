@@ -5,7 +5,7 @@ The Admin Dashboard provides comprehensive testing and monitoring capabilities f
 
 ## Access Information
 - **URL**: `http://localhost:5174/admin`
-- **Admin Password**: ``1``
+- **Admin Password**: `gamesta_admin_2024`
 - **Authentication**: Secure admin-only access with password protection
 
 ## Features

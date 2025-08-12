@@ -1,0 +1,284 @@
+{
+    "folders": [
+        {
+            "name": "Gamesta",
+            "path": "."
+        }
+    ],
+    "settings": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": "explicit",
+            "source.organizeImports": "explicit"
+        },
+        "typescript.preferences.importModuleSpecifier": "relative",
+        "typescript.suggest.autoImports": true,
+        "emmet.includeLanguages": {
+            "typescript": "html",
+            "typescriptreact": "html"
+        },
+        "files.associations": {
+            "*.css": "tailwindcss"
+        },
+        "tailwindCSS.includeLanguages": {
+            "typescript": "html",
+            "typescriptreact": "html"
+        },
+        "tailwindCSS.experimental.classRegex": [
+            [
+                "clsx\\(([^)]*)\\)",
+                "(?:'|\"|`)([^']*)(?:'|\"|`)"
+            ],
+            [
+                "classnames\\(([^)]*)\\)",
+                "(?:'|\"|`)([^']*)(?:'|\"|`)"
+            ],
+            [
+                "cn\\(([^)]*)\\)",
+                "(?:'|\"|`)([^']*)(?:'|\"|`)"
+            ]
+        ],
+        "search.exclude": {
+            "**/node_modules": true,
+            "**/dist": true,
+            "**/.git": true,
+            "**/.vscode": false
+        },
+        "files.exclude": {
+            "**/node_modules": true,
+            "**/.git": true,
+            "**/dist": false
+        },
+        "terminal.integrated.defaultProfile.windows": "PowerShell",
+        "terminal.integrated.profiles.windows": {
+            "PowerShell": {
+                "source": "PowerShell",
+                "icon": "terminal-powershell"
+            }
+        },
+        "eslint.workingDirectories": [
+            "./"
+        ],
+        "eslint.validate": [
+            "typescript",
+            "typescriptreact"
+        ],
+        "todo-tree.general.tags": [
+            "BUG",
+            "HACK",
+            "FIXME",
+            "TODO",
+            "XXX",
+            "[ ]",
+            "[x]",
+            "REVIEW",
+            "OPTIMIZE"
+        ],
+        "todo-tree.highlights.defaultHighlight": {
+            "icon": "alert",
+            "type": "tag",
+            "foreground": "red",
+            "background": "white",
+            "opacity": 50,
+            "iconColour": "blue"
+        },
+        "extensions.ignoreRecommendations": false,
+        "workbench.statusBar.visible": true,
+        "problems.showCurrentInStatus": true,
+        "npm.enableScriptExplorer": true,
+        "npm.scriptExplorerAction": "run",
+        "task.autoDetect": "on",
+        "task.showDecorations": true,
+        "workbench.panel.defaultLocation": "bottom",
+        "workbench.editor.enablePreview": false,
+        "workbench.startupEditor": "readme",
+        "git.autofetch": true,
+        "git.confirmSync": false,
+        "git.enableSmartCommit": true,
+        "workbench.colorCustomizations": {
+            "statusBar.background": "#7c3aed",
+            "statusBar.foreground": "#ffffff",
+            "statusBar.noFolderBackground": "#7c3aed",
+            "statusBarItem.hoverBackground": "#8b5cf6",
+            "statusBarItem.activeBackground": "#6d28d9",
+            "panel.border": "#7c3aed",
+            "terminal.background": "#1e1b4b",
+            "terminal.foreground": "#e5e7eb"
+        },
+        "extensions.autoCheckUpdates": true,
+        "extensions.autoUpdate": false
+    },
+    "extensions": {
+        "recommendations": [
+            "bradlc.vscode-tailwindcss",
+            "esbenp.prettier-vscode",
+            "ms-vscode.vscode-typescript-next",
+            "formulahendry.auto-rename-tag",
+            "christian-kohler.path-intellisense",
+            "ms-vscode.vscode-json",
+            "gruntfuggly.todo-tree",
+            "ms-vscode.sublime-keybindings",
+            "usernamehw.errorlens",
+            "bradlc.vscode-tailwindcss",
+            "ms-vscode.vscode-eslint",
+            "dbaeumer.vscode-eslint"
+        ],
+        "unwantedRecommendations": [
+            "ms-python.python",
+            "ms-dotnettools.csharp",
+            "golang.go",
+            "rust-lang.rust-analyzer",
+            "ms-vscode.powershell",
+            "ms-vscode.cpptools"
+        ]
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "🎮 Launch Gamesta Dev Server",
+                "type": "node",
+                "request": "launch",
+                "program": "${workspaceFolder}/node_modules/.bin/vite",
+                "args": [
+                    "--host"
+                ],
+                "console": "integratedTerminal",
+                "env": {
+                    "NODE_ENV": "development"
+                },
+                "skipFiles": [
+                    "<node_internals>/**"
+                ]
+            }
+        ]
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "🎮 Start Development Server",
+                "type": "shell",
+                "command": "npm",
+                "args": [
+                    "run",
+                    "dev"
+                ],
+                "group": {
+                    "kind": "build",
+                    "isDefault": true
+                },
+                "isBackground": true,
+                "presentation": {
+                    "echo": true,
+                    "reveal": "always",
+                    "focus": false,
+                    "panel": "shared",
+                    "showReuseMessage": true,
+                    "clear": false
+                },
+                "problemMatcher": {
+                    "owner": "vite",
+                    "pattern": {
+                        "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                        "file": 1,
+                        "line": 2,
+                        "column": 3,
+                        "severity": 4,
+                        "message": 5
+                    },
+                    "background": {
+                        "activeOnStart": true,
+                        "beginsPattern": ".*Local:.*",
+                        "endsPattern": ".*ready in.*"
+                    }
+                }
+            },
+            {
+                "label": "🔨 Build for Production",
+                "type": "shell",
+                "command": "npm",
+                "args": [
+                    "run",
+                    "build"
+                ],
+                "group": "build",
+                "presentation": {
+                    "echo": true,
+                    "reveal": "always",
+                    "focus": false,
+                    "panel": "shared"
+                }
+            },
+            {
+                "label": "👀 Preview Production Build",
+                "type": "shell",
+                "command": "npm",
+                "args": [
+                    "run",
+                    "preview"
+                ],
+                "group": "test",
+                "isBackground": true,
+                "dependsOn": "🔨 Build for Production"
+            },
+            {
+                "label": "🔍 Lint Code",
+                "type": "shell",
+                "command": "npm",
+                "args": [
+                    "run",
+                    "lint"
+                ],
+                "group": "test",
+                "presentation": {
+                    "echo": true,
+                    "reveal": "always",
+                    "focus": false,
+                    "panel": "shared"
+                }
+            },
+            {
+                "label": "🚀 Deploy to GitHub Pages",
+                "type": "shell",
+                "command": "npm",
+                "args": [
+                    "run",
+                    "deploy"
+                ],
+                "group": "build",
+                "dependsOn": "🔨 Build for Production"
+            },
+            {
+                "label": "📦 Install Dependencies",
+                "type": "shell",
+                "command": "npm",
+                "args": [
+                    "install"
+                ],
+                "group": "build"
+            },
+            {
+                "label": "🧹 Clean Install",
+                "type": "shell",
+                "command": "pwsh",
+                "args": [
+                    "-Command",
+                    "Remove-Item -Recurse -Force node_modules, package-lock.json -ErrorAction SilentlyContinue; npm install"
+                ],
+                "group": "build"
+            },
+            {
+                "label": "🔄 Quick Restart Dev Server",
+                "type": "shell",
+                "command": "pwsh",
+                "args": [
+                    "-Command",
+                    "Stop-Process -Name 'node' -Force -ErrorAction SilentlyContinue; Start-Sleep 1; npm run dev"
+                ],
+                "group": "build",
+                "isBackground": true
+            }
+        ]
+    }
+}
